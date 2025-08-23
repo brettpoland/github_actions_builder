@@ -21,6 +21,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.collections.FXCollections;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -44,7 +45,7 @@ public class GitHubActionsBuilderApp extends Application {
 
     private void showRunnerCountScene() {
         Label label = new Label("Select number of runners:");
-        Spinner<Integer> spinner = new Spinner<>(1, 10, 1);
+        Spinner<Integer> spinner = new Spinner<>(1, 10, runnerCount > 0 ? runnerCount : 1);
         Label eventLabel = new Label("Select workflow triggers:");
         CheckBox push = new CheckBox("push");
         CheckBox pr = new CheckBox("pull_request");
@@ -52,6 +53,12 @@ public class GitHubActionsBuilderApp extends Application {
         CheckBox schedule = new CheckBox("schedule");
         CheckBox issues = new CheckBox("issues");
         CheckBox release = new CheckBox("release");
+        push.setSelected(workflowTriggers.contains("push"));
+        pr.setSelected(workflowTriggers.contains("pull_request"));
+        dispatch.setSelected(workflowTriggers.contains("workflow_dispatch"));
+        schedule.setSelected(workflowTriggers.contains("schedule"));
+        issues.setSelected(workflowTriggers.contains("issues"));
+        release.setSelected(workflowTriggers.contains("release"));
         Button next = new Button("Next");
         next.setOnAction(e -> {
             runnerCount = spinner.getValue();
@@ -73,14 +80,34 @@ public class GitHubActionsBuilderApp extends Application {
     }
 
     private void showRunnerConfigScene() {
-        RunnerConfigForm form = new RunnerConfigForm(currentRunner + 1, runnerCount);
+        RunnerConfig existing = currentRunner < configs.size() ? configs.get(currentRunner) : null;
+        RunnerConfigForm form = new RunnerConfigForm(currentRunner + 1, runnerCount, existing);
         form.getNextButton().setOnAction(e -> {
-            configs.add(form.toConfig());
+            RunnerConfig cfg = form.toConfig();
+            if (currentRunner < configs.size()) {
+                configs.set(currentRunner, cfg);
+            } else {
+                configs.add(cfg);
+            }
             currentRunner++;
             if (currentRunner < runnerCount) {
                 showRunnerConfigScene();
             } else {
                 showSummaryScene();
+            }
+        });
+        form.getBackButton().setOnAction(e -> {
+            RunnerConfig cfg = form.toConfig();
+            if (currentRunner < configs.size()) {
+                configs.set(currentRunner, cfg);
+            } else {
+                configs.add(cfg);
+            }
+            if (currentRunner > 0) {
+                currentRunner--;
+                showRunnerConfigScene();
+            } else {
+                showRunnerCountScene();
             }
         });
         stage.setScene(new Scene(form, 400, 300));
@@ -191,12 +218,31 @@ public class GitHubActionsBuilderApp extends Application {
         private final CheckBox issuesBox = new CheckBox("issues");
         private final CheckBox releaseBox = new CheckBox("release");
         private final Button next = new Button("Next");
+        private final Button back = new Button("Back");
 
-        RunnerConfigForm(int index, int total) {
+        RunnerConfigForm(int index, int total, RunnerConfig existing) {
             setSpacing(10);
             setPadding(new Insets(20));
             runsOnBox.setValue("ubuntu-latest");
             cloudBox.setValue("AWS");
+            if (existing != null) {
+                nameField.setText(existing.name);
+                runsOnBox.setValue(existing.runsOn);
+                cloudBox.setValue(existing.cloud);
+                accessKeyField.setText(existing.accessKeySecret);
+                secretKeyField.setText(existing.secretKeySecret);
+                pushBox.setSelected(existing.triggers.contains("push"));
+                prBox.setSelected(existing.triggers.contains("pull_request"));
+                dispatchBox.setSelected(existing.triggers.contains("workflow_dispatch"));
+                scheduleBox.setSelected(existing.triggers.contains("schedule"));
+                issuesBox.setSelected(existing.triggers.contains("issues"));
+                releaseBox.setSelected(existing.triggers.contains("release"));
+            } else {
+                nameField.setText("runner" + index);
+            }
+            if (index == total) {
+                next.setText("Finish");
+            }
             getChildren().addAll(
                     new Label("Runner " + index + " of " + total),
                     new Label("Job name:"), nameField,
@@ -206,16 +252,16 @@ public class GitHubActionsBuilderApp extends Application {
                     new Label("Secret key secret name:"), secretKeyField,
                     new Label("Triggers:"),
                     pushBox, prBox, dispatchBox, scheduleBox, issuesBox, releaseBox,
-                    next
+                    new HBox(10, back, next)
             );
-            nameField.setText("runner" + index);
-            if (index == total) {
-                next.setText("Finish");
-            }
         }
 
         Button getNextButton() {
             return next;
+        }
+
+        Button getBackButton() {
+            return back;
         }
 
         RunnerConfig toConfig() {
