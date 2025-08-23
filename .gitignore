@@ -1,0 +1,64 @@
+# Java compiled class files
+*.class
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Maven
+/target/
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+buildNumber.properties
+.mvn/timing.properties
+
+# Maven Wrapper (keep wrapper scripts, ignore the downloaded jar if desired)
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+out/
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+private/
+build/
+nbbuild/
+dist/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Environment / credentials
+.env
+*.keystore
+
+# Operating system files
+desktop.ini
